@@ -1,0 +1,29 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+venv/
+env/
+.venv
+px-env/
+*.egg-info/
+.env
+
+# Node
+node_modules/
+npm-debug.log*
+build/
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Redis
+dump.rdb
+
+# Logs
+*.log
