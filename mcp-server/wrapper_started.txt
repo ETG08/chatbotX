@@ -1,0 +1,5 @@
+Wrapper started at C:\Users\EPremkumar\ProjectX\backend
+Python: C:\Users\EPremkumar\ProjectX\backend\myenv\Scripts\python.exe
+Server script: C:\Users\EPremkumar\ProjectX\mcp-server\mcp_server.py
+Server exists: True
+Server PID: 183896

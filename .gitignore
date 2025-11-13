@@ -1,19 +1,25 @@
 ﻿# Python
 __pycache__/
 *.py[cod]
-*.class
+*.pyc
+*.pyo
+*$py.class
 *.so
 .Python
 venv/
 env/
-.venv
+.venv/
 px-env/
 *.egg-info/
+*.egg
+dist/
+build/
 .env
 
 # Node
 node_modules/
 npm-debug.log*
+yarn-debug.log*
 build/
 .DS_Store
 
@@ -21,9 +27,15 @@ build/
 .vscode/
 .idea/
 *.swp
+*.swo
+*~
 
 # Redis
 dump.rdb
 
 # Logs
 *.log
+
+# OS
+.DS_Store
+Thumbs.db

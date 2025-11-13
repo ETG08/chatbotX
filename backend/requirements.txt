@@ -1,0 +1,20 @@
+# Web Framework
+fastapi
+uvicorn[standard]
+
+# Database
+redis
+
+# Utilities
+python-dotenv
+httpx
+
+# MCP (Model Context Protocol)
+# Installing from GitHub to ensure latest version
+git+https://github.com/modelcontextprotocol/python-sdk.git
+
+# Azure Foundry Local (THE CORRECT PACKAGE!)
+foundry-local-sdk
+
+# OpenAI client for the SDK's local API
+openai
