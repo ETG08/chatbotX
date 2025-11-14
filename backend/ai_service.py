@@ -16,7 +16,7 @@ class AzureAIService:
     Uses the same approach Emily has used before.
     """
     
-    def __init__(self, model_alias="qwen2.5-7b"):
+    def __init__(self, model_alias="phi-4"):
         """Initialize AI service with foundry_local."""
         print("🔄 Initializing Azure AI Foundry Local...")
         
@@ -27,26 +27,15 @@ class AzureAIService:
         # Initialize the model
         self._initialize_model()
         
-        self.system_prompt = """You are a helpful company assistant. You help employees with:
-- Finding employee information
-- Checking leave balances
-- Getting department information
-- Viewing company holidays
-- Reading announcements
-- Searching policies
+        self.system_prompt = """You are a helpful company assistant with access to employee data, policies, and company information.
 
-IMPORTANT: You MUST use the provided tools to look up information. Do not make up information.
+When users ask for information, use the available tools to look it up. Never make up or hallucinate data.
 
-When you need to look up information, respond with EXACTLY this format:
-TOOL_CALL: <tool_name> {"parameter": "value"}
+To use a tool, respond with:
+TOOL_CALL: tool_name {"param": "value"}
 
-Examples:
-- User asks "Who is John Doe?" -> You respond: TOOL_CALL: search_employees {"search": "John Doe"}
-- User asks "What holidays do we have?" -> You respond: TOOL_CALL: get_holidays {}
-- User asks "Show leave balance for EMP001" -> You respond: TOOL_CALL: get_leave_balance {"employee_id": "EMP001"}
-- User asks "Tell me about the engineering department" -> You respond: TOOL_CALL: get_departments {}
-
-Always be helpful, professional, and concise."""
+You can use multiple tools if needed. Always provide helpful, accurate responses based on the tool results. And it is important that you don't answer to messages out of context. If an user's request is something out of context just inform them that you can't provide information out of context"""
+    
     
     def _initialize_model(self):
         """Initialize and start the foundry local model"""
@@ -74,35 +63,36 @@ Always be helpful, professional, and concise."""
             raise
     
     def format_tools_for_prompt(self, tools: List[Dict[str, Any]]) -> str:
-        """Format MCP tools as text for the model's context."""
-        tools_text = "\n\n=== AVAILABLE TOOLS ===\n"
+        """Format MCP tools for Phi-4 (smarter, needs less hand-holding)."""
+        
+        tools_text = "\n\n=== Available Tools ===\n"
         
         for tool in tools:
             tools_text += f"\n**{tool['name']}**\n"
-            tools_text += f"Description: {tool['description']}\n"
+            tools_text += f"{tool['description']}\n"
             
             properties = tool['input_schema'].get('properties', {})
             if properties:
-                tools_text += "Parameters:\n"
+                params = []
                 for param_name, param_info in properties.items():
                     required = param_name in tool['input_schema'].get('required', [])
-                    req_text = "(required)" if required else "(optional)"
-                    tools_text += f"  - {param_name} {req_text}: {param_info.get('description', '')}\n"
+                    req_marker = "*" if required else ""
+                    params.append(f"{param_name}{req_marker}: {param_info.get('description', '')}")
+                
+                tools_text += f"Parameters: {', '.join(params)}\n"
         
-        tools_text += "\n=== HOW TO USE TOOLS ===\n"
-        tools_text += "When a user asks for information, you MUST use a tool to look it up.\n"
-        tools_text += "Respond with EXACTLY this format (copy it exactly!):\n"
-        tools_text += 'TOOL_CALL: tool_name {"param1": "value1", "param2": "value2"}\n\n'
-        
-        tools_text += "EXAMPLES OF CORRECT TOOL USAGE:\n"
-        tools_text += 'User: "Who is John Doe?" -> Your response: TOOL_CALL: search_employees {"search": "John Doe"}\n'
-        tools_text += 'User: "What are our holidays?" -> Your response: TOOL_CALL: get_holidays {}\n'
-        tools_text += 'User: "Show me leave for EMP001" -> Your response: TOOL_CALL: get_leave_balance {"employee_id": "EMP001"}\n'
-        tools_text += 'User: "Find someone in engineering" -> Your response: TOOL_CALL: search_employees {"department": "engineering"}\n'
-        tools_text += 'User: "What are the departments?" -> Your response: TOOL_CALL: get_departments {}\n'
-        tools_text += 'User: "Show announcements" -> Your response: TOOL_CALL: get_announcements {}\n'
-        tools_text += 'User: "What is the remote work policy?" -> Your response: TOOL_CALL: search_policies {"search": "remote work"}\n'
-        tools_text += "\n======================\n"
+        tools_text += """
+=== Tool Usage Format ===
+TOOL_CALL: tool_name {"param": "value"}
+
+Examples:
+• Search employee: TOOL_CALL: search_employees {"search": "John Doe"}
+• Get holidays: TOOL_CALL: get_holidays {}
+• Find by dept: TOOL_CALL: search_employees {"department": "Engineering"}
+• Leave balance: TOOL_CALL: get_leave_balance {"employee_id": "EMP001"}
+
+Use tools whenever users ask for specific information. Provide natural, conversational responses after receiving tool results.
+"""
         
         return tools_text
     
@@ -198,8 +188,8 @@ Always be helpful, professional, and concise."""
             response = self.client.chat.completions.create(
                 model=model_id,
                 messages=formatted_messages,
-                temperature=0.3,  # Lower temperature for more consistent tool calling
-                max_tokens=512
+                temperature=0.4,
+                max_tokens=800
             )
             
             # Extract generated text

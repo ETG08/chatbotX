@@ -283,6 +283,8 @@ async def get_employees(
             or search_lower in emp['email'].lower()
             or search_lower in emp['id'].lower()
             or search_lower in f"{emp['firstName']} {emp['lastName']}".lower()  # Search full name
+            or search_lower in emp['designation'].lower()  # Search by job title
+            or search_lower in emp['manager'].lower()      # Search by manager name
         ]
 
     # Filter by department (CASE-INSENSITIVE)
