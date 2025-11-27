@@ -404,7 +404,7 @@ async def get_policies(
             if search_lower in pol['title'].lower()
             or search_lower in pol['content'].lower()
             or search_lower in pol['category'].lower()
-        ]
+        ]   
 
     return {
         "data": policies,

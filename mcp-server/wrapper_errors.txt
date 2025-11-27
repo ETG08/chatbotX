@@ -1,5 +1,5 @@
 === Wrapper Session Started ===
-Server started with PID: 147740
+Server started with PID: 192612
 stdin forwarder started
 stdout forwarder started
 stderr forwarder started
@@ -8,5 +8,8 @@ stdin->server: 165 bytes
 server->stdout: 195 bytes
 stdin->server: 59 bytes
 server->stdout: 1313 bytes
-stdin->server: 116 bytes
-server->stdout: 109 bytes
+stdin->server: 121 bytes
+server->stdout: 570 bytes
+stdin->server: 121 bytes
+server->stdout: 570 bytes
+stdin: EOF received

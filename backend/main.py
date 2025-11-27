@@ -96,7 +96,7 @@ redis_client = redis.Redis(
 
 # Azure AI Service
 print("🤖 Initializing AI Service...")
-ai_service = AzureAIService(model_alias=os.getenv("AI_MODEL", "phi-4"))
+ai_service = AzureAIService(model_alias=os.getenv("AI_MODEL", "qwen2.5-1.5b"))
 print("✅ AI Service ready!")
 
 # ==================== MODELS ====================

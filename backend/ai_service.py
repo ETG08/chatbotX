@@ -16,7 +16,7 @@ class AzureAIService:
     Uses the same approach Emily has used before.
     """
     
-    def __init__(self, model_alias="phi-4"):
+    def __init__(self, model_alias="qwen2.5-1.5b"):
         """Initialize AI service with foundry_local."""
         print("🔄 Initializing Azure AI Foundry Local...")
         
