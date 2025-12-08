@@ -16,7 +16,7 @@ class AzureAIService:
     Uses the same approach Emily has used before.
     """
     
-    def __init__(self, model_alias="qwen2.5-1.5b"):
+    def __init__(self, model_alias="phi-4"):
         """Initialize AI service with foundry_local."""
         print("🔄 Initializing Azure AI Foundry Local...")
         
@@ -152,7 +152,7 @@ Use tools whenever users ask for specific information. Provide natural, conversa
     ) -> str:
         """
         Generate response from Azure AI Foundry Local model.
-        Uses OpenAI-compatible API (same as your QA system).
+        Uses OpenAI-compatible API.
         """
         
         if not self.client:
