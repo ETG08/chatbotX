@@ -96,7 +96,7 @@ redis_client = redis.Redis(
 
 # Azure AI Service
 print("🤖 Initializing AI Service...")
-ai_service = AzureAIService(model_alias=os.getenv("AI_MODEL", "phi-4"))
+ai_service = AzureAIService()
 print("✅ AI Service ready!")
 
 # ==================== MODELS ====================
@@ -139,14 +139,7 @@ def save_to_history(session_id: str, role: str, content: str):
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """
-    Main chat endpoint with TRUE MCP integration.
-    
-    Flow:
-    1. User sends message
-    2. Get MCP tools from Joshna's server
-    3. Send to AI model with tools
-    4. If AI wants to use tool, call via MCP
-    5. Return final response
+    Main chat endpoint with NATIVE OpenAI tool calling.
     """
     
     session_id = request.session_id or str(uuid.uuid4())
@@ -162,20 +155,22 @@ async def chat(request: ChatRequest):
         )
         
         # Get available tools from MCP server
-        tools_for_ai = mcp_client.get_tools()
+        tools = mcp_client.get_tools()
         
-        print(f"🔧 Available tools: {len(tools_for_ai)}")
+        print(f"🔧 Available tools: {len(tools)}")
         
         # Get conversation history
         history = get_session_history(session_id)
         
-        # Build messages for AI
+        # Build messages for AI (only user/assistant messages, no tool messages in history)
         messages = []
         for msg in history:
-            messages.append({
-                "role": msg["role"],
-                "content": msg["content"]
-            })
+            # Only include user and assistant messages from history
+            if msg["role"] in ["user", "assistant"]:
+                messages.append({
+                    "role": msg["role"],
+                    "content": msg["content"]
+                })
         
         # Add new user message
         messages.append({
@@ -186,71 +181,88 @@ async def chat(request: ChatRequest):
         # Track which tools were used
         tools_used = []
         
-        # Get AI response
-        ai_response = await ai_service.generate_response(messages, tools_for_ai)
-        
-        print(f"🤖 Initial AI response: {ai_response[:100]}...")
+        # Get AI response (with possible tool calls)
+        ai_response = await ai_service.generate_response(messages, tools)
         
         # Handle tool calling loop
-        max_iterations = 5  # Prevent infinite loops
+        max_iterations = 5
         iteration = 0
         
-        while iteration < max_iterations:
-            # Check if AI wants to use tools
-            tool_calls = ai_service.parse_tool_calls(ai_response)
+        while ai_response.get("tool_calls") and iteration < max_iterations:
+            iteration += 1
+            print(f"🔄 Iteration {iteration}: Processing {len(ai_response['tool_calls'])} tool call(s)")
             
-            if not tool_calls:
-                # No more tool calls, we're done
-                break
+            # Create assistant message with tool calls
+            assistant_message = {
+                "role": "assistant",
+                "content": ai_response.get("content") or None  # Can be None if only tool calls
+            }
             
-            print(f"🔄 Iteration {iteration + 1}: Found {len(tool_calls)} tool call(s)")
+            # Format tool calls
+            tool_calls_formatted = []
+            for tc in ai_response["tool_calls"]:
+                tool_calls_formatted.append({
+                    "id": tc["id"],
+                    "type": "function",
+                    "function": {
+                        "name": tc["name"],
+                        "arguments": json.dumps(tc["arguments"])
+                    }
+                })
             
-            # Execute tool calls via MCP
-            tool_results_list = []
+            assistant_message["tool_calls"] = tool_calls_formatted
             
-            for tool_call in tool_calls:
+            # DEBUG: Print the assistant message
+            print(f"🔍 DEBUG: Adding assistant message:")
+            print(f"   Role: {assistant_message['role']}")
+            print(f"   Content: {assistant_message.get('content')}")
+            print(f"   Tool calls: {len(assistant_message['tool_calls'])}")
+            
+            messages.append(assistant_message)
+            
+            # Execute tool calls and add results
+            for tool_call in ai_response["tool_calls"]:
                 tool_name = tool_call["name"]
                 arguments = tool_call["arguments"]
+                tool_call_id = tool_call["id"]
                 
                 tools_used.append(tool_name)
                 
-                # Call MCP server using official SDK
+                # Call MCP server
                 result_text = await mcp_client.call_tool(tool_name, arguments)
                 
-                tool_results_list.append({
-                    "tool": tool_name,
-                    "result": result_text
-                })
+                # Create tool result message
+                tool_message = {
+                    "role": "tool",
+                    "tool_call_id": tool_call_id,
+                    "content": result_text
+                }
+                
+                # DEBUG: Print the tool message
+                print(f"🔍 DEBUG: Adding tool message:")
+                print(f"   Role: {tool_message['role']}")
+                print(f"   Tool call ID: {tool_message['tool_call_id']}")
+                print(f"   Content length: {len(tool_message['content'])}")
+                
+                messages.append(tool_message)
             
-            # Format tool results
-            tool_results_text = "\n\n".join([
-                f"=== Tool: {tr['tool']} ===\n{tr['result']}"
-                for tr in tool_results_list
-            ])
+            # DEBUG: Print entire message history before next call
+            print(f"\n🔍 DEBUG: Full message history ({len(messages)} messages):")
+            for i, msg in enumerate(messages):
+                print(f"   [{i}] Role: {msg['role']}, Has tool_calls: {'tool_calls' in msg}, Has tool_call_id: {'tool_call_id' in msg}")
+            print()
             
-            # Add to conversation
-            messages.append({
-                "role": "assistant",
-                "content": ai_response
-            })
-            messages.append({
-                "role": "user",
-                "content": f"Tool Results:\n\n{tool_results_text}\n\nBased on these results, provide a helpful response to the user."
-            })
-            
-            # Get final response from AI
-            ai_response = await ai_service.generate_response(messages, tools_for_ai)
-            
-            iteration += 1
+            # Get next response from AI
+            ai_response = await ai_service.generate_response(messages, tools)
         
-        # Clean up response (remove tool call syntax)
-        final_response = ai_service.clean_response(ai_response)
+        # Get final text response
+        final_response = ai_response.get("content", "I apologize, but I couldn't generate a response.")
         
         print(f"✅ Final response: {final_response[:100]}...")
         print(f"🔧 Tools used: {tools_used}")
         print(f"{'='*60}\n")
         
-        # Save to history
+        # Save to history (only save user message and final assistant response)
         save_to_history(session_id, "user", request.message)
         save_to_history(session_id, "assistant", final_response)
         
