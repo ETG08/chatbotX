@@ -96,7 +96,7 @@ redis_client = redis.Redis(
 
 # Azure AI Service
 print("🤖 Initializing AI Service...")
-ai_service = AzureAIService()
+ai_service = AzureAIService() #No parameters
 print("✅ AI Service ready!")
 
 # ==================== MODELS ====================
