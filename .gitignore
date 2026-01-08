@@ -15,6 +15,7 @@ px-env/
 dist/
 build/
 .env
+myenv/
 
 # Node
 node_modules/
@@ -39,3 +40,20 @@ dump.rdb
 # OS
 .DS_Store
 Thumbs.db
+
+# FastMCP specific
+mcp_debug.log
+mcp_*.log
+.mcp/
+.mcp_cache/
+mcp-server.log
+
+# MCP stdio communication logs (if debugging)
+stdio_*.log
+
+# FastMCP generated files
+.fastmcp/
+
+# MCP inspector data (if you use the inspector)
+.mcp_inspector/
+inspector.log
