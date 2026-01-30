@@ -143,14 +143,14 @@ Be accurate, helpful, and professional."""
         # Convert MCP tools to OpenAI format
         openai_tools = self.convert_tools_to_openai_format(tools)
         
-        # Build messages for API
+        # Build messages for AI
         formatted_messages = [
             {
                 "role": "system",
                 "content": self.system_prompt
             }
         ]
-        
+         
         # Add conversation history
         for msg in messages:
             # Create message dict

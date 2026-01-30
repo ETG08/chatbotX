@@ -36,12 +36,12 @@ async def lifespan(app: FastAPI):
     print("🚀 Company Chatbot Backend Starting...")
     print("="*60)
     
-    # Start MCP client (connects to Joshna's MCP server)
+
     mcp_server_path = os.getenv("MCP_SERVER_PATH", "../mcp-server/mcp_server.py")
     
     try:
         import asyncio
-        import traceback # Add this import at the top of your main.py file
+        import traceback 
         
         print(f"Attempting to connect to MCP Server at: {os.path.abspath(mcp_server_path)}")
         
@@ -54,7 +54,7 @@ async def lifespan(app: FastAPI):
         print("="*60 + "\n")
         
     except Exception as e:
-        # This will now print the DETAILED error from the subprocess
+        # This will print the DETAILED error from the subprocess
         print(f"❌❌❌ FAILED TO START MCP CLIENT ❌❌❌")
         print(f"The mcp_server.py script likely crashed. Here's the error it produced:")
         print(f"{e}")
