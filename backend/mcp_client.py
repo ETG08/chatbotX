@@ -47,12 +47,12 @@ class MCPClient:
         
         self._exit_stack = AsyncExitStack()
         stdio_transport = await self._exit_stack.enter_async_context(
-            stdio_client(server_params)
+            stdio_client(server_params) #Launches the MCP Server with its command
         )
         
         stdio, write = stdio_transport
         self.session = await self._exit_stack.enter_async_context(
-            ClientSession(stdio, write)
+            ClientSession(stdio, write) #Creates a client session to communicate with the server
         )
         
         # Initialize the session
